@@ -1,4 +1,5 @@
 const express = require("express");
+const applicationRoutes = require("./routes/applicationRoutes");
 
 const app = express();
 
@@ -14,5 +15,8 @@ app.get("/api/health", (req, res) => {
     message: "Backend connected successfully!",
   });
 });
+
+// Application routes
+app.use("/api/applications", applicationRoutes);
 
 module.exports = app;
