@@ -1,13 +1,10 @@
-const mongoose = require("mongoose");
+const mongoUri =
+  process.env.NODE_ENV === "test"
+    ? process.env.TEST_MONGODB_URI
+    : process.env.MONGODB_URI;
 
-async function connectDB() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI is missing from environment variables");
-  }
-
-  await mongoose.connect(process.env.MONGODB_URI);
-
-  console.log(`MongoDB connected: ${mongoose.connection.host}`);
+if (!mongoUri) {
+  throw new Error("MongoDB connection URI is missing");
 }
 
-module.exports = connectDB;
+await mongoose.connect(mongoUri);

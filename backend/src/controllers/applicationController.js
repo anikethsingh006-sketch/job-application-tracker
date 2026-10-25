@@ -9,7 +9,7 @@ const createApplication = async (req, res) => {
       data: application,
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -19,9 +19,9 @@ const createApplication = async (req, res) => {
 const getApplications = async (req, res) => {
   try {
     const applications = await applicationService.getApplications();
-    res.status(200).json({ data: applications });
+    res.status(200).json({ success: true, data: applications });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -71,7 +71,7 @@ const updateApplication = async (req, res) => {
       data: application,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -96,7 +96,7 @@ const deleteApplication = async (req, res) => {
       data: application,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
