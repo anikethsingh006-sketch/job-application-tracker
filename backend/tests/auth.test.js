@@ -117,3 +117,29 @@ describe("POST /api/auth/login", () => {
     expect(response.body.message).toBe("Invalid email or password");
   });
 });
+// logout
+describe("POST /api/auth/logout", () => {
+  it("should logout successfully", async () => {
+    const agent = request.agent(app);
+
+    // Register a user
+    await agent.post("/api/auth/register").send({
+      name: "Test User",
+      email: "logout@example.com",
+      password: "password123",
+    });
+
+    // Login to create a session
+    await agent.post("/api/auth/login").send({
+      email: "logout@example.com",
+      password: "password123",
+    });
+
+    // Logout
+    const response = await agent.post("/api/auth/logout");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe("Logged out successfully");
+  });
+});
