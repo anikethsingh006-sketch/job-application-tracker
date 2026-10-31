@@ -32,14 +32,26 @@ async function login(req, res) {
 
     const user = await loginUser(email, email ? password : password);
 
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error("Session regeneration error:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+
+      req.session.userId = user._id.toString();
+
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
+        data: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+        },
+      });
     });
   } catch (error) {
     console.error("Login error:", error);

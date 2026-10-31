@@ -80,6 +80,8 @@ describe("POST /api/auth/login", () => {
       email: "login@example.com",
       password: "password123",
     });
+    expect(response.headers["set-cookie"]).toBeDefined();
+    expect(response.headers["set-cookie"][0]).toContain("connect.sid");
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
