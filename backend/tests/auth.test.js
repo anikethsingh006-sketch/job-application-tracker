@@ -65,3 +65,53 @@ describe("POST /api/auth/register", () => {
     expect(response.body.message).toBe("Email is already registered");
   });
 });
+
+describe("POST /api/auth/login", () => {
+  it("should login successfully with correct credentials", async () => {
+    // Register a user first
+    await request(app).post("/api/auth/register").send({
+      name: "Aniketh",
+      email: "login@example.com",
+      password: "password123",
+    });
+
+    // Attempt login
+    const response = await request(app).post("/api/auth/login").send({
+      email: "login@example.com",
+      password: "password123",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.email).toBe("login@example.com");
+    expect(response.body.data.password).toBeUndefined();
+  });
+
+  it("should reject an incorrect password", async () => {
+    await request(app).post("/api/auth/register").send({
+      name: "Aniketh",
+      email: "wrong-password@example.com",
+      password: "password123",
+    });
+
+    const response = await request(app).post("/api/auth/login").send({
+      email: "wrong-password@example.com",
+      password: "wrongpassword",
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Invalid email or password");
+  });
+
+  it("should reject a user who does not exist", async () => {
+    const response = await request(app).post("/api/auth/login").send({
+      email: "unknown@example.com",
+      password: "password123",
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Invalid email or password");
+  });
+});

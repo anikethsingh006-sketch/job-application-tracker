@@ -1,4 +1,4 @@
-const { registerUser } = require("../services/authService");
+const { registerUser, loginUser } = require("../services/authService");
 
 async function register(req, res) {
   try {
@@ -26,4 +26,32 @@ async function register(req, res) {
   }
 }
 
-module.exports = { register };
+async function login(req, res) {
+  try {
+    const { email, password } = req.body;
+
+    const user = await loginUser(email, email ? password : password);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.statusCode === 401
+          ? "Invalid email or password"
+          : "Internal server error",
+    });
+  }
+}
+
+module.exports = { register, login };

@@ -23,4 +23,24 @@ async function registerUser(userData) {
   return user;
 }
 
-module.exports = { registerUser };
+async function loginUser(email, password) {
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return user;
+}
+
+module.exports = { registerUser, loginUser };
