@@ -21,7 +21,9 @@ const createApplication = async (req, res) => {
 
 const getApplications = async (req, res) => {
   try {
-    const applications = await applicationService.getApplications();
+    const applications = await applicationService.getApplications(
+      req.session.userId,
+    );
     res.status(200).json({ success: true, data: applications });
   } catch (error) {
     res.status(500).json({
@@ -33,7 +35,10 @@ const getApplications = async (req, res) => {
 const getApplicationById = async (req, res) => {
   try {
     const id = req.params.id;
-    const application = await applicationService.getApplicationbyId(id);
+    const application = await applicationService.getApplicationbyId(
+      id,
+      req.session.userId,
+    );
     if (!application) {
       return res.status(404).json({
         success: false,
@@ -60,6 +65,7 @@ const updateApplication = async (req, res) => {
     const application = await applicationService.updateApplication(
       id,
       updateData,
+      req.session.userId,
     );
 
     if (!application) {
@@ -84,7 +90,10 @@ const deleteApplication = async (req, res) => {
   try {
     const id = req.params.id;
 
-    const application = await applicationService.deleteApplication(id);
+    const application = await applicationService.deleteApplication(
+      id,
+      req.session.userId,
+    );
 
     if (!application) {
       return res.status(404).json({

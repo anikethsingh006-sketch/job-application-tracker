@@ -2,9 +2,28 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../src/app.js";
 
-describe("POST /api/applications", () => {
+async function createAuthenticatedAgent(email) {
+  const agent = request.agent(app);
+
+  await agent.post("/api/auth/register").send({
+    name: "Test User",
+    email,
+    password: "password123",
+  });
+
+  await agent.post("/api/auth/login").send({
+    email,
+    password: "password123",
+  });
+
+  return agent;
+}
+
+describe("Application API", () => {
   it("should reject an application without a company name", async () => {
-    const response = await request(app).post("/api/applications").send({
+    const agent = await createAuthenticatedAgent("validation@example.com");
+
+    const response = await agent.post("/api/applications").send({
       role: "Software Engineer",
     });
 
@@ -21,17 +40,19 @@ describe("POST /api/applications", () => {
   });
 
   it("should retrieve a single application by ID", async () => {
-    const createResponse = await request(app).post("/api/applications").send({
+    const agent = await createAuthenticatedAgent("single@example.com");
+
+    const createResponse = await agent.post("/api/applications").send({
       company: "Amazon",
       role: "SDE Intern",
       status: "Applied",
     });
 
+    expect(createResponse.status).toBe(201);
+
     const applicationId = createResponse.body.data._id;
 
-    const response = await request(app).get(
-      `/api/applications/${applicationId}`,
-    );
+    const response = await agent.get(`/api/applications/${applicationId}`);
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -40,15 +61,16 @@ describe("POST /api/applications", () => {
     expect(response.body.data.role).toBe("SDE Intern");
   });
 
-  it("should retrieve all applications", async () => {
-    // Create an application in the test database first
-    await request(app).post("/api/applications").send({
+  it("should retrieve all applications belonging to the user", async () => {
+    const agent = await createAuthenticatedAgent("list@example.com");
+
+    await agent.post("/api/applications").send({
       company: "Microsoft",
       role: "Data Scientist",
       status: "Applied",
     });
 
-    const response = await request(app).get("/api/applications");
+    const response = await agent.get("/api/applications");
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -64,7 +86,9 @@ describe("POST /api/applications", () => {
   });
 
   it("should create an application successfully", async () => {
-    const response = await request(app).post("/api/applications").send({
+    const agent = await createAuthenticatedAgent("create@example.com");
+
+    const response = await agent.post("/api/applications").send({
       company: "Google",
       role: "Software Engineer",
       status: "Applied",
@@ -76,8 +100,11 @@ describe("POST /api/applications", () => {
     expect(response.body.data.role).toBe("Software Engineer");
     expect(response.body.data.status).toBe("Applied");
   });
+
   it("should reject an invalid application status", async () => {
-    const response = await request(app).post("/api/applications").send({
+    const agent = await createAuthenticatedAgent("status@example.com");
+
+    const response = await agent.post("/api/applications").send({
       company: "Google",
       role: "Software Engineer",
       status: "Flying to Mars",
@@ -97,7 +124,9 @@ describe("POST /api/applications", () => {
   });
 
   it("should reject an invalid application ID", async () => {
-    const response = await request(app).get("/api/applications/not-a-valid-id");
+    const agent = await createAuthenticatedAgent("invalidid@example.com");
+
+    const response = await agent.get("/api/applications/not-a-valid-id");
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
@@ -105,7 +134,9 @@ describe("POST /api/applications", () => {
   });
 
   it("should return 404 when an application does not exist", async () => {
-    const response = await request(app).get(
+    const agent = await createAuthenticatedAgent("missing@example.com");
+
+    const response = await agent.get(
       "/api/applications/507f1f77bcf86cd799439011",
     );
 

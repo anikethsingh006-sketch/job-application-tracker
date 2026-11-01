@@ -5,29 +5,31 @@ async function createApplication(applicationData, ownerId) {
   // it retiurns athe saved document object with all id,etc
   const application = await Application.create({
     ...applicationData,
-    applicationData,
+    ownerId,
   });
   return application;
 }
-async function getApplications() {
-  const applications = await Application.find();
+async function getApplications(ownerId) {
+  const applications = await Application.find({ ownerId });
   return applications;
 }
-async function getApplicationbyId(id) {
-  const application = await Application.findById(id);
-  return application;
+async function getApplicationbyId(id, ownerId) {
+  return await Application.findOne({
+    _id: id,
+    ownerId,
+  });
 }
-async function updateApplication(id, updateData) {
-  const application = await Application.findByIdAndUpdate(id, updateData, {
+async function updateApplication(id, data, ownerId) {
+  return await Application.findOneAndUpdate({ _id: id, ownerId }, data, {
     new: true,
     runValidators: true,
   });
-
-  return application;
 }
-async function deleteApplication(id) {
-  const application = await Application.findByIdAndDelete(id);
-  return application;
+async function deleteApplication(id, ownerId) {
+  return await Application.findOneAndDelete({
+    _id: id,
+    ownerId,
+  });
 }
 module.exports = {
   createApplication,
