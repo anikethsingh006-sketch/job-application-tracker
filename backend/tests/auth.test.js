@@ -143,3 +143,35 @@ describe("POST /api/auth/logout", () => {
     expect(response.body.message).toBe("Logged out successfully");
   });
 });
+
+describe("GET /api/auth/me", () => {
+  it("should return the currently logged-in user", async () => {
+    const agent = request.agent(app);
+
+    await agent.post("/api/auth/register").send({
+      name: "Test User",
+      email: "me@example.com",
+      password: "password123",
+    });
+
+    await agent.post("/api/auth/login").send({
+      email: "me@example.com",
+      password: "password123",
+    });
+
+    const response = await agent.get("/api/auth/me");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.name).toBe("Test User");
+    expect(response.body.data.email).toBe("me@example.com");
+    expect(response.body.data.password).toBeUndefined();
+  });
+
+  it("should reject unauthenticated users", async () => {
+    const response = await request(app).get("/api/auth/me");
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe("Authentication required");
+  });
+});
