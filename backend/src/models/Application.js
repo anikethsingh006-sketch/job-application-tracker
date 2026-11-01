@@ -50,6 +50,12 @@ const applicationSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,

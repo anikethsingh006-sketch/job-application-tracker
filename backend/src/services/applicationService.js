@@ -1,9 +1,12 @@
 const Application = require("../models/Application");
 
-async function createApplication(applicationData) {
+async function createApplication(applicationData, ownerId) {
   // Application.create() validates the data against our Mongoose schema and saves the document to MongoDB.
   // it retiurns athe saved document object with all id,etc
-  const application = await Application.create(applicationData);
+  const application = await Application.create({
+    ...applicationData,
+    applicationData,
+  });
   return application;
 }
 async function getApplications() {

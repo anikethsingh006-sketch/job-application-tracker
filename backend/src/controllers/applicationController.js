@@ -2,7 +2,10 @@ const applicationService = require("../services/applicationService");
 
 const createApplication = async (req, res) => {
   try {
-    const application = await applicationService.createApplication(req.body);
+    const application = await applicationService.createApplication(
+      req.body,
+      req.session.userId,
+    );
 
     res.status(201).json({
       success: true,
