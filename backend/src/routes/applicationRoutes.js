@@ -4,6 +4,7 @@ const validateObjectId = require("../middleware/validateObjectId");
 const validateRequest = require("../middleware/validateRequest");
 const requireAuth = require("../middleware/requireAuth");
 const validateInterviewId = require("../middleware/validateInterviewId");
+const applicationQueryValidator = require("../validators/applicationQueryValidator");
 
 const {
   createApplicationValidator,
@@ -35,7 +36,14 @@ router.post(
 );
 
 // Read applications
-router.get("/", requireAuth, getApplications);
+router.get(
+  "/",
+  requireAuth,
+  applicationQueryValidator,
+  validateRequest,
+  getApplications,
+);
+
 router.get("/:id", requireAuth, validateObjectId, getApplicationById);
 
 // Update an application

@@ -19,19 +19,33 @@ const createApplication = async (req, res) => {
   }
 };
 
-const getApplications = async (req, res) => {
+async function getApplications(req, res) {
   try {
-    const applications = await applicationService.getApplications(
+    const filters = {
+      search: req.query.search,
+      status: req.query.status,
+      sort: req.query.sort || "newest",
+      page: Number(req.query.page) || 1,
+      limit: Number(req.query.limit) || 10,
+    };
+
+    const result = await applicationService.getApplications(
       req.session.userId,
+      filters,
     );
-    res.status(200).json({ success: true, data: applications });
+
+    return res.status(200).json({
+      success: true,
+      data: result.applications,
+      pagination: result.pagination,
+    });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
-};
+}
 const getApplicationById = async (req, res) => {
   try {
     const id = req.params.id;

@@ -399,59 +399,6 @@ describe("Application API", () => {
 
     expect(otherUserResponse.status).toBe(404);
   });
-
-  it("should add an interview to an application successfully", async () => {
-    const agent = await createAuthenticatedAgent("interview@example.com");
-
-    const createResponse = await agent.post("/api/applications").send({
-      company: "Google",
-      role: "SDE Intern",
-    });
-
-    const applicationId = createResponse.body.data._id;
-
-    const response = await agent
-      .post(`/api/applications/${applicationId}/interviews`)
-      .send({
-        round: "Technical Round 1",
-        type: "Video",
-        scheduledAt: "2026-11-10T10:00:00.000Z",
-        durationMinutes: 60,
-        meetingLink: "https://meet.google.com/abc",
-        notes: "Prepare DSA questions",
-      });
-
-    expect(response.status).toBe(201);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.interviews).toHaveLength(1);
-    expect(response.body.data.interviews[0].round).toBe("Technical Round 1");
-    expect(response.body.data.interviews[0].type).toBe("Video");
-  });
-  it("should reject an interview with invalid data", async () => {
-    const agent = await createAuthenticatedAgent(
-      "invalid-interview@example.com",
-    );
-
-    const createResponse = await agent.post("/api/applications").send({
-      company: "Google",
-      role: "SDE Intern",
-    });
-
-    const applicationId = createResponse.body.data._id;
-
-    const response = await agent
-      .post(`/api/applications/${applicationId}/interviews`)
-      .send({
-        round: "",
-        type: "Gaming",
-        scheduledAt: "not-a-date",
-        durationMinutes: -10,
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body.success).toBe(false);
-    expect(response.body.errors.length).toBeGreaterThan(0);
-  });
 });
 
 describe("Interview API", () => {
@@ -706,5 +653,198 @@ describe("Delete Interview API", () => {
     const ownerResponse = await agent.get(`/api/applications/${applicationId}`);
 
     expect(ownerResponse.body.data.interviews).toHaveLength(1);
+  });
+});
+
+describe("Application Search, Filtering and Pagination", () => {
+  let agent;
+
+  beforeEach(async () => {
+    agent = await createAuthenticatedAgent(
+      `listing-${Date.now()}-${Math.random()}@test.com`,
+    );
+
+    // Create test applications
+    await agent.post("/api/applications").send({
+      company: "Google",
+      role: "Software Engineer",
+      status: "Applied",
+    });
+
+    await agent.post("/api/applications").send({
+      company: "Amazon",
+      role: "SDE Intern",
+      status: "Interview",
+    });
+
+    await agent.post("/api/applications").send({
+      company: "Microsoft",
+      role: "Data Scientist",
+      status: "Applied",
+    });
+
+    await agent.post("/api/applications").send({
+      company: "Google",
+      role: "Data Analyst",
+      status: "Rejected",
+    });
+
+    await agent.post("/api/applications").send({
+      company: "Netflix",
+      role: "Backend Engineer",
+      status: "Interview",
+    });
+  });
+
+  it("should search applications by company", async () => {
+    const response = await agent.get("/api/applications?search=Google");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.data.every((app) => app.company === "Google")).toBe(
+      true,
+    );
+  });
+
+  it("should search applications by role", async () => {
+    const response = await agent.get("/api/applications?search=Data Scientist");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].role).toBe("Data Scientist");
+  });
+
+  it("should perform case-insensitive search", async () => {
+    const response = await agent.get("/api/applications?search=google");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+  });
+
+  it("should filter applications by status", async () => {
+    const response = await agent.get("/api/applications?status=Interview");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.data.every((app) => app.status === "Interview")).toBe(
+      true,
+    );
+  });
+
+  it("should sort applications by oldest first", async () => {
+    const response = await agent.get("/api/applications?sort=oldest");
+
+    expect(response.status).toBe(200);
+
+    const dates = response.body.data.map((app) =>
+      new Date(app.createdAt).getTime(),
+    );
+
+    expect(dates).toEqual([...dates].sort((a, b) => a - b));
+  });
+
+  it("should sort applications by newest first by default", async () => {
+    const response = await agent.get("/api/applications");
+
+    expect(response.status).toBe(200);
+
+    const dates = response.body.data.map((app) =>
+      new Date(app.createdAt).getTime(),
+    );
+
+    expect(dates).toEqual([...dates].sort((a, b) => b - a));
+  });
+
+  it("should return the requested page and pagination metadata", async () => {
+    const response = await agent.get("/api/applications?page=1&limit=2");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+
+    expect(response.body.pagination).toEqual({
+      total: 5,
+      page: 1,
+      limit: 2,
+      totalPages: 3,
+    });
+  });
+
+  it("should return the second page", async () => {
+    const response = await agent.get("/api/applications?page=2&limit=2");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.pagination.page).toBe(2);
+  });
+
+  it("should return the remaining records on the last page", async () => {
+    const response = await agent.get("/api/applications?page=3&limit=2");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+  });
+
+  it("should return no records for a page beyond the available pages", async () => {
+    const response = await agent.get("/api/applications?page=10&limit=2");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(0);
+    expect(response.body.pagination.totalPages).toBe(3);
+  });
+
+  it("should combine search, status filtering and pagination", async () => {
+    const response = await agent.get(
+      "/api/applications?search=Engineer&status=Interview&page=1&limit=1",
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].company).toBe("Netflix");
+    expect(response.body.data[0].status).toBe("Interview");
+
+    expect(response.body.pagination.total).toBe(1);
+  });
+
+  it("should reject an invalid status filter", async () => {
+    const response = await agent.get("/api/applications?status=Hired");
+
+    expect(response.status).toBe(400);
+  });
+
+  it("should reject an invalid page number", async () => {
+    const response = await agent.get("/api/applications?page=0");
+
+    expect(response.status).toBe(400);
+  });
+
+  it("should reject an invalid limit", async () => {
+    const response = await agent.get("/api/applications?limit=101");
+
+    expect(response.status).toBe(400);
+  });
+
+  it("should reject an invalid sort option", async () => {
+    const response = await agent.get("/api/applications?sort=random");
+
+    expect(response.status).toBe(400);
+  });
+
+  it("should only search applications belonging to the logged-in user", async () => {
+    const anotherAgent = await createAuthenticatedAgent(
+      `other-${Date.now()}@test.com`,
+    );
+
+    await anotherAgent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+      status: "Applied",
+    });
+
+    const response = await agent.get("/api/applications?search=Google");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.data.every((app) => app.ownerId)).toBe(true);
+    expect(response.body.pagination.total).toBe(2);
   });
 });
