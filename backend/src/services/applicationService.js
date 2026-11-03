@@ -15,9 +15,46 @@ async function createApplication(data, ownerId) {
     ],
   });
 }
-async function getApplications(ownerId) {
-  const applications = await Application.find({ ownerId });
-  return applications;
+async function getApplications(ownerId, filters) {
+  const { search, status, sort = "newest", page = 1, limit = 10 } = filters;
+
+  const query = { ownerId };
+
+  // Search by company or role
+  if (search) {
+    query.$or = [
+      { company: { $regex: search, $options: "i" } },
+      { role: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Filter by status
+  if (status) {
+    query.status = status;
+  }
+
+  const skip = (page - 1) * limit;
+
+  const sortOrder = sort === "oldest" ? 1 : -1;
+
+  const [applications, total] = await Promise.all([
+    Application.find(query)
+      .sort({ createdAt: sortOrder })
+      .skip(skip)
+      .limit(limit),
+
+    Application.countDocuments(query),
+  ]);
+
+  return {
+    applications,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 async function getApplicationbyId(id, ownerId) {
   return await Application.findOne({
