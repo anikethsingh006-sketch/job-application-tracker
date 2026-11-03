@@ -1,13 +1,19 @@
 const Application = require("../models/Application");
 
-async function createApplication(applicationData, ownerId) {
-  // Application.create() validates the data against our Mongoose schema and saves the document to MongoDB.
-  // it retiurns athe saved document object with all id,etc
-  const application = await Application.create({
-    ...applicationData,
+async function createApplication(data, ownerId) {
+  const initialStatus = data.status || "Saved";
+
+  return await Application.create({
+    ...data,
     ownerId,
+    status: initialStatus,
+    statusEvents: [
+      {
+        status: initialStatus,
+        changedAt: new Date(),
+      },
+    ],
   });
-  return application;
 }
 async function getApplications(ownerId) {
   const applications = await Application.find({ ownerId });
@@ -20,10 +26,41 @@ async function getApplicationbyId(id, ownerId) {
   });
 }
 async function updateApplication(id, data, ownerId) {
-  return await Application.findOneAndUpdate({ _id: id, ownerId }, data, {
-    new: true,
-    runValidators: true,
+  const application = await Application.findOne({
+    _id: id,
+    ownerId,
   });
+
+  if (!application) {
+    return null;
+  }
+
+  if (data.status && data.status !== application.status) {
+    application.statusEvents.push({
+      status: data.status,
+      changedAt: new Date(),
+    });
+  }
+
+  const allowedFields = [
+    "company",
+    "role",
+    "jobUrl",
+    "location",
+    "status",
+    "appliedDate",
+    "notes",
+  ];
+
+  for (const field of allowedFields) {
+    if (data[field] !== undefined) {
+      application[field] = data[field];
+    }
+  }
+
+  await application.save();
+
+  return application;
 }
 async function deleteApplication(id, ownerId) {
   return await Application.findOneAndDelete({

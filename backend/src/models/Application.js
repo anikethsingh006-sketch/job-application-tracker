@@ -56,6 +56,27 @@ const applicationSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    statusEvents: [
+      {
+        status: {
+          type: String,
+          enum: [
+            "Saved",
+            "Applied",
+            "Online Assessment",
+            "Interview",
+            "Offer",
+            "Rejected",
+            "Withdrawn",
+          ],
+          required: true,
+        },
+        changedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -315,4 +315,88 @@ describe("Application API", () => {
 
     expect(getResponse.status).toBe(404);
   });
+  it("should record status changes in application history", async () => {
+    const agent = await createAuthenticatedAgent("history@example.com");
+
+    const createResponse = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+      status: "Applied",
+    });
+
+    expect(createResponse.status).toBe(201);
+
+    const applicationId = createResponse.body.data._id;
+
+    const updateResponse = await agent
+      .put(`/api/applications/${applicationId}`)
+      .send({
+        status: "Interview",
+      });
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body.data.status).toBe("Interview");
+
+    expect(updateResponse.body.data.statusEvents).toHaveLength(2);
+
+    expect(updateResponse.body.data.statusEvents[0].status).toBe("Applied");
+    expect(updateResponse.body.data.statusEvents[1].status).toBe("Interview");
+  });
+  it("should not add a status event when the status remains unchanged", async () => {
+    const agent = await createAuthenticatedAgent("same-status@example.com");
+
+    const createResponse = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+      status: "Applied",
+    });
+
+    const applicationId = createResponse.body.data._id;
+
+    const updateResponse = await agent
+      .put(`/api/applications/${applicationId}`)
+      .send({
+        company: "Google India",
+        status: "Applied",
+      });
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body.data.company).toBe("Google India");
+    expect(updateResponse.body.data.statusEvents).toHaveLength(1);
+  });
+  it("should prevent users from changing application ownership", async () => {
+    const userA = await createAuthenticatedAgent("ownerA@example.com");
+    const userB = await createAuthenticatedAgent("ownerB@example.com");
+
+    const userBResponse = await userB.get("/api/auth/me");
+    const userBId = userBResponse.body.data.id;
+
+    const createResponse = await userA.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+    });
+
+    const applicationId = createResponse.body.data._id;
+
+    // User A attempts to transfer ownership to User B
+    const updateResponse = await userA
+      .put(`/api/applications/${applicationId}`)
+      .send({
+        ownerId: userBId,
+      });
+
+    expect(updateResponse.status).toBe(200);
+
+    // User A should still own and access the application
+    const ownerResponse = await userA.get(`/api/applications/${applicationId}`);
+
+    expect(ownerResponse.status).toBe(200);
+
+    // User B must not gain access
+    const otherUserResponse = await userB.get(
+      `/api/applications/${applicationId}`,
+    );
+
+    expect(otherUserResponse.status).toBe(404);
+  });
 });
