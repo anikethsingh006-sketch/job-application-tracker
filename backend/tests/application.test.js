@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../src/app.js";
 
@@ -398,5 +398,313 @@ describe("Application API", () => {
     );
 
     expect(otherUserResponse.status).toBe(404);
+  });
+
+  it("should add an interview to an application successfully", async () => {
+    const agent = await createAuthenticatedAgent("interview@example.com");
+
+    const createResponse = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+    });
+
+    const applicationId = createResponse.body.data._id;
+
+    const response = await agent
+      .post(`/api/applications/${applicationId}/interviews`)
+      .send({
+        round: "Technical Round 1",
+        type: "Video",
+        scheduledAt: "2026-11-10T10:00:00.000Z",
+        durationMinutes: 60,
+        meetingLink: "https://meet.google.com/abc",
+        notes: "Prepare DSA questions",
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.interviews).toHaveLength(1);
+    expect(response.body.data.interviews[0].round).toBe("Technical Round 1");
+    expect(response.body.data.interviews[0].type).toBe("Video");
+  });
+  it("should reject an interview with invalid data", async () => {
+    const agent = await createAuthenticatedAgent(
+      "invalid-interview@example.com",
+    );
+
+    const createResponse = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+    });
+
+    const applicationId = createResponse.body.data._id;
+
+    const response = await agent
+      .post(`/api/applications/${applicationId}/interviews`)
+      .send({
+        round: "",
+        type: "Gaming",
+        scheduledAt: "not-a-date",
+        durationMinutes: -10,
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Interview API", () => {
+  it("should add an interview successfully", async () => {
+    const agent = await createAuthenticatedAgent("interview1@example.com");
+
+    const created = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+    });
+
+    const response = await agent
+      .post(`/api/applications/${created.body.data._id}/interviews`)
+      .send({
+        round: "Technical Round 1",
+        type: "Video",
+        scheduledAt: "2026-11-10T10:00:00.000Z",
+        durationMinutes: 60,
+        meetingLink: "https://meet.google.com/abc",
+        notes: "Prepare DSA questions",
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.interviews).toHaveLength(1);
+    expect(response.body.data.interviews[0].round).toBe("Technical Round 1");
+  });
+
+  it("should reject invalid interview data", async () => {
+    const agent = await createAuthenticatedAgent("interview2@example.com");
+
+    const created = await agent.post("/api/applications").send({
+      company: "Amazon",
+      role: "SDE",
+    });
+
+    const response = await agent
+      .post(`/api/applications/${created.body.data._id}/interviews`)
+      .send({
+        round: "",
+        type: "Gaming",
+        scheduledAt: "not-a-date",
+        durationMinutes: -10,
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.errors.length).toBeGreaterThan(0);
+  });
+
+  it("should update an interview successfully", async () => {
+    const agent = await createAuthenticatedAgent("interview3@example.com");
+
+    const created = await agent.post("/api/applications").send({
+      company: "Microsoft",
+      role: "SDE Intern",
+    });
+
+    const applicationId = created.body.data._id;
+
+    const added = await agent
+      .post(`/api/applications/${applicationId}/interviews`)
+      .send({
+        round: "Technical Round 1",
+        scheduledAt: "2026-11-10T10:00:00.000Z",
+      });
+
+    const interviewId = added.body.data.interviews[0]._id;
+
+    const response = await agent
+      .put(`/api/applications/${applicationId}/interviews/${interviewId}`)
+      .send({
+        outcome: "Passed",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.interviews[0].outcome).toBe("Passed");
+  });
+
+  it("should reject invalid interview update data", async () => {
+    const agent = await createAuthenticatedAgent("interview4@example.com");
+
+    const created = await agent.post("/api/applications").send({
+      company: "Amazon",
+      role: "SDE",
+    });
+
+    const applicationId = created.body.data._id;
+
+    const added = await agent
+      .post(`/api/applications/${applicationId}/interviews`)
+      .send({
+        round: "HR Round",
+        scheduledAt: "2026-11-10T10:00:00.000Z",
+      });
+
+    const interviewId = added.body.data.interviews[0]._id;
+
+    const response = await agent
+      .put(`/api/applications/${applicationId}/interviews/${interviewId}`)
+      .send({
+        outcome: "Selected Immediately",
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  it("should prevent a user from updating another user's interview", async () => {
+    const userA = await createAuthenticatedAgent("interview5a@example.com");
+    const userB = await createAuthenticatedAgent("interview5b@example.com");
+
+    const created = await userA.post("/api/applications").send({
+      company: "Google",
+      role: "SDE",
+    });
+
+    const applicationId = created.body.data._id;
+
+    const added = await userA
+      .post(`/api/applications/${applicationId}/interviews`)
+      .send({
+        round: "Technical Round",
+        scheduledAt: "2026-11-10T10:00:00.000Z",
+      });
+
+    const interviewId = added.body.data.interviews[0]._id;
+
+    const response = await userB
+      .put(`/api/applications/${applicationId}/interviews/${interviewId}`)
+      .send({
+        outcome: "Passed",
+      });
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should reject an invalid interview ID", async () => {
+    const agent = await createAuthenticatedAgent("interview6@example.com");
+
+    const created = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE",
+    });
+
+    const response = await agent
+      .put(`/api/applications/${created.body.data._id}/interviews/invalid-id`)
+      .send({
+        outcome: "Passed",
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Invalid interview ID");
+  });
+
+  it("should reject unauthenticated interview requests", async () => {
+    const response = await request(app)
+      .post("/api/applications/507f1f77bcf86cd799439011/interviews")
+      .send({
+        round: "Technical Round",
+        scheduledAt: "2026-11-10T10:00:00.000Z",
+      });
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("Delete Interview API", () => {
+  let agent;
+  let applicationId;
+  let interviewId;
+
+  beforeEach(async () => {
+    agent = await createAuthenticatedAgent(
+      `delete-interview-${Date.now()}-${Math.random()}@test.com`,
+    );
+
+    const appResponse = await agent.post("/api/applications").send({
+      company: "Google",
+      role: "SDE Intern",
+    });
+
+    applicationId = appResponse.body.data._id;
+
+    const interviewResponse = await agent
+      .post(`/api/applications/${applicationId}/interviews`)
+      .send({
+        round: "Technical Round",
+        scheduledAt: "2026-12-10T10:00:00.000Z",
+      });
+
+    interviewId = interviewResponse.body.data.interviews[0]._id;
+  });
+
+  it("should delete an interview successfully", async () => {
+    const response = await agent.delete(
+      `/api/applications/${applicationId}/interviews/${interviewId}`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.interviews).toHaveLength(0);
+  });
+
+  it("should return 404 if the interview does not exist", async () => {
+    const fakeInterviewId = "507f1f77bcf86cd799439011";
+
+    const response = await agent.delete(
+      `/api/applications/${applicationId}/interviews/${fakeInterviewId}`,
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should return 404 if the application does not exist", async () => {
+    const fakeApplicationId = "507f1f77bcf86cd799439011";
+
+    const response = await agent.delete(
+      `/api/applications/${fakeApplicationId}/interviews/${interviewId}`,
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should reject an invalid interview ID", async () => {
+    const response = await agent.delete(
+      `/api/applications/${applicationId}/interviews/invalid-id`,
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it("should reject an unauthenticated request", async () => {
+    const response = await request(app).delete(
+      `/api/applications/${applicationId}/interviews/${interviewId}`,
+    );
+
+    expect(response.status).toBe(401);
+  });
+
+  it("should prevent another user from deleting the interview", async () => {
+    const anotherAgent = await createAuthenticatedAgent(
+      `another-user-${Date.now()}@test.com`,
+    );
+
+    const response = await anotherAgent.delete(
+      `/api/applications/${applicationId}/interviews/${interviewId}`,
+    );
+
+    expect(response.status).toBe(404);
+
+    // Original owner should still have the interview.
+    const ownerResponse = await agent.get(`/api/applications/${applicationId}`);
+
+    expect(ownerResponse.body.data.interviews).toHaveLength(1);
   });
 });

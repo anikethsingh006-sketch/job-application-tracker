@@ -114,10 +114,95 @@ const deleteApplication = async (req, res) => {
     });
   }
 };
+async function createInterview(req, res) {
+  try {
+    const application = await applicationService.addInterview(
+      req.params.id,
+      req.session.userId,
+      req.body,
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Interview added successfully",
+      data: application,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+async function updateInterview(req, res) {
+  try {
+    const application = await applicationService.updateInterview(
+      req.params.id,
+      req.params.interviewId,
+      req.session.userId,
+      req.body,
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application or interview not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Interview updated successfully",
+      data: application,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+async function deleteInterview(req, res) {
+  try {
+    const application = await applicationService.deleteInterview(
+      req.params.id,
+      req.params.interviewId,
+      req.session.userId,
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application or interview not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Interview deleted successfully",
+      data: application,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
 module.exports = {
   createApplication,
   getApplications,
   getApplicationById,
   updateApplication,
   deleteApplication,
+  createInterview,
+  updateInterview,
+  deleteInterview,
 };

@@ -56,6 +56,52 @@ const applicationSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    interviews: [
+      {
+        round: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+
+        type: {
+          type: String,
+          enum: ["Phone", "Video", "Onsite", "Other"],
+          default: "Video",
+        },
+
+        scheduledAt: {
+          type: Date,
+          required: true,
+        },
+
+        durationMinutes: {
+          type: Number,
+          default: 60,
+        },
+
+        meetingLink: {
+          type: String,
+          default: "",
+        },
+
+        location: {
+          type: String,
+          default: "",
+        },
+
+        notes: {
+          type: String,
+          default: "",
+        },
+
+        outcome: {
+          type: String,
+          enum: ["Pending", "Passed", "Failed", "Cancelled"],
+          default: "Pending",
+        },
+      },
+    ],
     statusEvents: [
       {
         status: {
