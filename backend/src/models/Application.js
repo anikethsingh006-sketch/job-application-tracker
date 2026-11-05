@@ -54,7 +54,6 @@ const applicationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
     interviews: [
       {
@@ -128,5 +127,11 @@ const applicationSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+applicationSchema.index({ ownerId: 1, createdAt: -1 });
+applicationSchema.index({
+  ownerId: 1,
+  status: 1,
+  createdAt: -1,
+});
 
 module.exports = mongoose.model("Application", applicationSchema);
