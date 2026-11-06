@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Login() {
@@ -10,7 +10,7 @@ function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();
-
+  const navigate = useNavigate();
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -22,6 +22,7 @@ function Login() {
       const password = passwordRef.current.value;
 
       await login(email, password);
+      navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
