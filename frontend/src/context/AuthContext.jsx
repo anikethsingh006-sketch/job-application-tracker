@@ -6,6 +6,8 @@ const AuthContext = createContext();
 
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+
+  // loading: Indicates whether the initial authentication check is complete.
   const [loading, setLoading] = useState(true);
 
   // Check whether a valid session already exists
@@ -63,6 +65,7 @@ function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// SELF-NOTE --> see pg-47 of document
 function useAuth() {
   return useContext(AuthContext);
 }
