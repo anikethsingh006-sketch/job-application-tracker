@@ -36,7 +36,6 @@ function AuthProvider({ children }) {
     setUser(response.data.data);
     return response.data.data;
   }
-
   // Register
   async function register(name, email, password) {
     const response = await api.post("/auth/register", {
