@@ -1,0 +1,70 @@
+import { useEffect, useState } from "react";
+import api from "../services/api";
+
+function Applications() {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchApplications() {
+      try {
+        const response = await api.get("/applications");
+
+        setApplications(response.data.data);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch applications");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchApplications();
+  }, []);
+
+  if (loading) return <p>Loading applications...</p>;
+
+  if (error) return <p className="text-red-400">{error}</p>;
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold">My Applications</h1>
+
+      {applications.length === 0 ? (
+        <p className="mt-6 text-slate-400">
+          No applications found. Start by adding one!
+        </p>
+      ) : (
+        <div className="mt-6 overflow-x-auto rounded-xl border border-slate-800">
+          <table className="w-full text-left">
+            <thead className="bg-slate-900 text-slate-400">
+              <tr>
+                <th className="p-4">Company</th>
+                <th className="p-4">Role</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Applied Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {applications.map((application) => (
+                <tr key={application._id} className="border-t border-slate-800">
+                  <td className="p-4">{application.company}</td>
+                  <td className="p-4">{application.role}</td>
+                  <td className="p-4">{application.status}</td>
+                  <td className="p-4">
+                    {application.appliedDate
+                      ? new Date(application.appliedDate).toLocaleDateString()
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default Applications;

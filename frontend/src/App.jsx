@@ -2,15 +2,19 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Applications from "./pages/Applications";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
-import Dashboard from "./pages/Dashboard";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+      {/* Public routes */}
       <Route
         path="/login"
         element={
@@ -29,14 +33,17 @@ function App() {
         }
       />
 
+      {/* Protected routes */}
       <Route
-        path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/applications" element={<Applications />} />
+      </Route>
 
       <Route path="*" element={<h1>404 - Page Not Found</h1>} />
     </Routes>
