@@ -1,28 +1,21 @@
-import "./App.css";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import { useEffect, useState } from "react";
-
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 function App() {
-  const [message, setMessage] = useState("Connecting...");
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Request failed");
-        }
-        return res.json();
-      })
-      .then((data) => setMessage(data.message))
-      .catch(() => setMessage("Backend connection failed"));
-  }, []);
-
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold text-white">Job Application Tracker</h1>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-      <p className="text-lg text-emerald-400">{message}</p>
-    </div>
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/register" element={<Register></Register>} />
+
+      <Route path="/dashboard" element={<h1>Dashboard</h1>} />
+
+      <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+    </Routes>
   );
 }
+
 export default App;
