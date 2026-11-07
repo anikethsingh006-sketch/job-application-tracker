@@ -22,7 +22,10 @@ const updateInterviewValidator = [
     .isInt({ min: 1 })
     .withMessage("Duration must be a positive integer"),
 
-  body("meetingLink").optional().isURL().withMessage("Invalid meeting link"),
+  body("meetingLink")
+    .optional({ checkFalsy: true })
+    .isURL()
+    .withMessage("Invalid meeting link"),
 
   body("outcome")
     .optional()

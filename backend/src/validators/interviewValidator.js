@@ -12,7 +12,7 @@ const interviewValidator = [
     .notEmpty()
     .withMessage("Interview date is required")
     .bail()
-    .isISO8601()
+    .isISO8601({ strict: true })
     .withMessage("Invalid interview date"),
 
   body("durationMinutes")
