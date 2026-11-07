@@ -7,6 +7,23 @@ function Applications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  async function handleDelete(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this application?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/applications/${id}`);
+
+      setApplications((prev) =>
+        prev.filter((application) => application._id !== id),
+      );
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete application");
+    }
+  }
   useEffect(() => {
     async function fetchApplications() {
       try {
@@ -77,6 +94,12 @@ function Applications() {
                       Edit
                     </Link>
                   </td>
+                  <button
+                    onClick={() => handleDelete(application._id)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    Delete
+                  </button>
                 </tr>
               ))}
             </tbody>
