@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Applications from "./pages/Applications";
+import AddApplication from "./pages/AddApplication";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -43,6 +44,7 @@ function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/applications" element={<Applications />} />
+        <Route path="/applications/new" element={<AddApplication />} />
       </Route>
 
       <Route path="*" element={<h1>404 - Page Not Found</h1>} />

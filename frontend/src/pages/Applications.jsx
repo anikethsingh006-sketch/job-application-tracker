@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import { Link } from "react-router-dom";
 
 function Applications() {
   const [applications, setApplications] = useState([]);
@@ -28,7 +29,17 @@ function Applications() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold">My Applications</h1>
+      {/* Page heading and Add button */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">My Applications</h1>
+
+        <Link
+          to="/applications/new"
+          className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500"
+        >
+          + Add Application
+        </Link>
+      </div>
 
       {applications.length === 0 ? (
         <p className="mt-6 text-slate-400">
