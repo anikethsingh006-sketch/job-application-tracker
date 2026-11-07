@@ -12,6 +12,10 @@ function ApplicationDetails() {
   const [interviewSubmitting, setInterviewSubmitting] = useState(false);
   const [interviewError, setInterviewError] = useState("");
 
+  const [editingInterviewId, setEditingInterviewId] = useState(null);
+  const [editInterviewSubmitting, setEditInterviewSubmitting] = useState(false);
+  const [editInterviewError, setEditInterviewError] = useState("");
+
   const roundRef = useRef(null);
   const typeRef = useRef(null);
   const scheduledAtRef = useRef(null);
@@ -66,9 +70,101 @@ function ApplicationDetails() {
     }
   }
 
-  if (loading) return <p className="text-white">Loading application...</p>;
+  async function handleUpdateInterview(e) {
+    e.preventDefault();
 
-  if (error) return <p className="text-red-400">{error}</p>;
+    setEditInterviewError("");
+    setEditInterviewSubmitting(true);
+
+    try {
+      const interviewData = {
+        round: roundRef.current.value,
+        type: typeRef.current.value,
+        scheduledAt: scheduledAtRef.current.value,
+        durationMinutes: Number(durationRef.current.value),
+        meetingLink: meetingLinkRef.current.value,
+        notes: interviewNotesRef.current.value,
+      };
+
+      const response = await api.put(
+        `/applications/${id}/interviews/${editingInterviewId}`,
+        interviewData,
+      );
+
+      setApplication(response.data.data);
+      setEditingInterviewId(null);
+      e.target.reset();
+    } catch (err) {
+      console.log(err.response?.data);
+      setEditInterviewError(
+        err.response?.data?.message || "Failed to update interview",
+      );
+    } finally {
+      setEditInterviewSubmitting(false);
+    }
+  }
+
+  async function handleDeleteInterview(interviewId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this interview?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await api.delete(
+        `/applications/${id}/interviews/${interviewId}`,
+      );
+
+      setApplication(response.data.data);
+
+      if (editingInterviewId === interviewId) {
+        cancelEditing();
+      }
+    } catch (err) {
+      setInterviewError(
+        err.response?.data?.message || "Failed to delete interview",
+      );
+    }
+  }
+
+  function startEditing(interview) {
+    setEditingInterviewId(interview._id);
+
+    roundRef.current.value = interview.round;
+    typeRef.current.value = interview.type;
+
+    const scheduledDate = new Date(interview.scheduledAt);
+    const localDate = new Date(
+      scheduledDate.getTime() - scheduledDate.getTimezoneOffset() * 60000,
+    );
+
+    scheduledAtRef.current.value = localDate.toISOString().slice(0, 16);
+    durationRef.current.value = interview.durationMinutes;
+    meetingLinkRef.current.value = interview.meetingLink || "";
+    interviewNotesRef.current.value = interview.notes || "";
+
+    setInterviewError("");
+    setEditInterviewError("");
+  }
+
+  function cancelEditing() {
+    setEditingInterviewId(null);
+
+    if (roundRef.current) {
+      roundRef.current.form.reset();
+    }
+
+    setEditInterviewError("");
+  }
+
+  if (loading) {
+    return <p className="text-white">Loading application...</p>;
+  }
+
+  if (error) {
+    return <p className="text-red-400">{error}</p>;
+  }
 
   if (!application) return null;
 
@@ -158,11 +254,30 @@ function ApplicationDetails() {
                 className="rounded-lg border border-slate-700 p-4"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">{interview.round}</h3>
+                  <div>
+                    <h3 className="font-semibold">{interview.round}</h3>
+                    <span className="text-sm text-slate-400">
+                      {interview.outcome}
+                    </span>
+                  </div>
 
-                  <span className="rounded-full bg-slate-800 px-3 py-1 text-sm">
-                    {interview.outcome}
-                  </span>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => startEditing(interview)}
+                      className="text-indigo-400 hover:text-indigo-300"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteInterview(interview._id)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-3 space-y-2 text-sm text-slate-400">
@@ -201,11 +316,18 @@ function ApplicationDetails() {
         )}
       </section>
 
-      {/* Schedule Interview */}
+      {/* Schedule / Edit Interview */}
       <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="mb-5 text-xl font-semibold">Schedule Interview</h2>
+        <h2 className="mb-5 text-xl font-semibold">
+          {editingInterviewId ? "Edit Interview" : "Schedule Interview"}
+        </h2>
 
-        <form onSubmit={handleScheduleInterview} className="space-y-4">
+        <form
+          onSubmit={
+            editingInterviewId ? handleUpdateInterview : handleScheduleInterview
+          }
+          className="space-y-4"
+        >
           <input
             ref={roundRef}
             type="text"
@@ -243,6 +365,7 @@ function ApplicationDetails() {
             type="number"
             min="1"
             defaultValue="60"
+            required
             placeholder="Duration in minutes"
             className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
           />
@@ -265,13 +388,35 @@ function ApplicationDetails() {
             <p className="text-sm text-red-400">{interviewError}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={interviewSubmitting}
-            className="rounded-lg bg-indigo-600 px-5 py-2 hover:bg-indigo-500 disabled:opacity-50"
-          >
-            {interviewSubmitting ? "Scheduling..." : "Schedule Interview"}
-          </button>
+          {editInterviewError && (
+            <p className="text-sm text-red-400">{editInterviewError}</p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={interviewSubmitting || editInterviewSubmitting}
+              className="rounded-lg bg-indigo-600 px-5 py-2 hover:bg-indigo-500 disabled:opacity-50"
+            >
+              {editingInterviewId
+                ? editInterviewSubmitting
+                  ? "Updating..."
+                  : "Update Interview"
+                : interviewSubmitting
+                  ? "Scheduling..."
+                  : "Schedule Interview"}
+            </button>
+
+            {editingInterviewId && (
+              <button
+                type="button"
+                onClick={cancelEditing}
+                className="rounded-lg bg-slate-700 px-5 py-2 hover:bg-slate-600"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       </section>
 
