@@ -54,6 +54,7 @@ function Applications() {
                 <th className="p-4">Role</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Applied Date</th>
+                <th className="p-4">Actions</th>
               </tr>
             </thead>
 
@@ -67,6 +68,14 @@ function Applications() {
                     {application.appliedDate
                       ? new Date(application.appliedDate).toLocaleDateString()
                       : "—"}
+                  </td>
+                  <td className="p-4">
+                    <Link
+                      to={`/applications/${application._id}/edit`}
+                      className="text-indigo-400 hover:text-indigo-300"
+                    >
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}
