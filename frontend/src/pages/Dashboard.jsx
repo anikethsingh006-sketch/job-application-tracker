@@ -18,13 +18,6 @@ function Dashboard() {
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="mt-2 text-slate-400">Welcome, {user.name}</p>
         </div>
-
-        <button
-          onClick={handleLogout}
-          className="rounded-lg bg-red-600 px-5 py-2 hover:bg-red-500"
-        >
-          Logout
-        </button>
       </div>
     </div>
   );

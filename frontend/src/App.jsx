@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Applications from "./pages/Applications";
 import AddApplication from "./pages/AddApplication";
 import EditApplication from "./pages/EditApplication";
+import ApplicationDetails from "./pages/ApplicationDetails";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -47,6 +48,7 @@ function App() {
         <Route path="/applications" element={<Applications />} />
         <Route path="/applications/new" element={<AddApplication />} />
         <Route path="/applications/:id/edit" element={<EditApplication />} />
+        <Route path="/applications/:id" element={<ApplicationDetails />} />
       </Route>
 
       <Route path="*" element={<h1>404 - Page Not Found</h1>} />

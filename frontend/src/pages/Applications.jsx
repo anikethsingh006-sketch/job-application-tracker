@@ -87,19 +87,28 @@ function Applications() {
                       : "—"}
                   </td>
                   <td className="p-4">
-                    <Link
-                      to={`/applications/${application._id}/edit`}
-                      className="text-indigo-400 hover:text-indigo-300"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center gap-4">
+                      <Link
+                        to={`/applications/${application._id}/edit`}
+                        className="text-indigo-400 hover:text-indigo-300"
+                      >
+                        Edit
+                      </Link>
+
+                      <button
+                        onClick={() => handleDelete(application._id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Delete
+                      </button>
+                      <Link
+                        to={`/applications/${application._id}`}
+                        className="text-emerald-400 hover:text-emerald-300"
+                      >
+                        View
+                      </Link>
+                    </div>
                   </td>
-                  <button
-                    onClick={() => handleDelete(application._id)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    Delete
-                  </button>
                 </tr>
               ))}
             </tbody>
