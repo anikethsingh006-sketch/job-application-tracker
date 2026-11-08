@@ -4,6 +4,7 @@ const MongoStore = require("connect-mongo").default;
 
 const applicationRoutes = require("./routes/applicationRoutes");
 const authRoutes = require("./routes/authRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const app = express();
 const sessionMongoUri =
@@ -47,5 +48,6 @@ app.use(
 app.use("/api/applications", applicationRoutes);
 //Auth routes
 app.use("/api/auth", authRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 module.exports = app;
