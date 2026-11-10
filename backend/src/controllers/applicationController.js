@@ -1,4 +1,5 @@
 const applicationService = require("../services/applicationService");
+const { invalidateAnalyticsCache } = require("../utils/cache");
 
 const createApplication = async (req, res) => {
   try {
@@ -6,7 +7,7 @@ const createApplication = async (req, res) => {
       req.body,
       req.session.userId,
     );
-
+    await invalidateAnalyticsCache(req.session.userId);
     res.status(201).json({
       success: true,
       data: application,
@@ -88,7 +89,7 @@ const updateApplication = async (req, res) => {
         message: "Application not found",
       });
     }
-
+    await invalidateAnalyticsCache(req.session.userId);
     return res.status(200).json({
       success: true,
       data: application,
@@ -115,7 +116,7 @@ const deleteApplication = async (req, res) => {
         message: "Application not found",
       });
     }
-
+    await invalidateAnalyticsCache(req.session.userId);
     return res.status(200).json({
       success: true,
       message: "Application deleted successfully",
@@ -142,7 +143,7 @@ async function createInterview(req, res) {
         message: "Application not found",
       });
     }
-
+    await invalidateAnalyticsCache(req.session.userId);
     return res.status(201).json({
       success: true,
       message: "Interview added successfully",
@@ -170,7 +171,7 @@ async function updateInterview(req, res) {
         message: "Application or interview not found",
       });
     }
-
+    await invalidateAnalyticsCache(req.session.userId);
     return res.status(200).json({
       success: true,
       message: "Interview updated successfully",
@@ -197,7 +198,7 @@ async function deleteInterview(req, res) {
         message: "Application or interview not found",
       });
     }
-
+    await invalidateAnalyticsCache(req.session.userId);
     return res.status(200).json({
       success: true,
       message: "Interview deleted successfully",
