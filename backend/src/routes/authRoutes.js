@@ -12,11 +12,31 @@ const {
 
 const validateRequest = require("../middleware/validateRequest");
 const requireAuth = require("../middleware/requireAuth");
+const createRateLimiter = require("../middleware/rateLimiter");
 
 const router = express.Router();
 
-router.post("/register", registerValidator, validateRequest, register);
-router.post("/login", loginValidator, validateRequest, login);
+const loginRateLimiter = createRateLimiter({
+  windowSeconds: 15 * 60, // 15 minutes
+  maxRequests: 5,
+  keyPrefix: "login",
+});
+
+const registerRateLimiter = createRateLimiter({
+  windowSeconds: 60 * 60, // 1 hour
+  maxRequests: 5,
+  keyPrefix: "register",
+});
+
+router.post(
+  "/register",
+  registerRateLimiter,
+  registerValidator,
+  validateRequest,
+  register,
+);
+
+router.post("/login", loginRateLimiter, loginValidator, validateRequest, login);
 router.post("/logout", logout);
 router.get("/me", requireAuth, getMe);
 
