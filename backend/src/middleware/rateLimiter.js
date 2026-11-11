@@ -22,7 +22,14 @@ const rateLimitScript = `
 
 function createRateLimiter({ windowSeconds, maxRequests, keyPrefix }) {
   return async function rateLimiter(req, res, next) {
-    const key = `rate-limit:${keyPrefix}:${req.ip}`;
+    const forwardedFor = req.headers["x-forwarded-for"];
+
+    const clientIp =
+      typeof forwardedFor === "string"
+        ? forwardedFor.split(",")[0].trim()
+        : req.ip;
+
+    const key = `rate-limit:${keyPrefix}:${clientIp}`;
 
     try {
       const [requestCount, ttl] = await redisClient.eval(rateLimitScript, {
